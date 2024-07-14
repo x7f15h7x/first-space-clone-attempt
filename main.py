@@ -106,7 +106,7 @@ def main():
         asteroids.extend(new_asteroids)
 
         # Filter out bullets that are off-screen
-        bullets = [bullet for bullet in bullets if bullet.rect and 0 <= bullet.rect.x <= SCREEN_WIDTH and 0 <= bullet.rect.y <= HEIGHT]
+        bullets = [bullet for bullet in bullets if bullet.rect and 0 <= bullet.rect.x <= SCREEN_WIDTH and 0 <= bullet.rect.y <= SCREEN_HEIGHT]
 
         # Render the game objects
         screen.fill((0, 0, 0))
