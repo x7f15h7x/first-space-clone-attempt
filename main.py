@@ -20,18 +20,21 @@ pygame.display.set_caption("Asteroids")
 def detect_collision(rect1, rect2):
     return rect1.colliderect(rect2)
 
+def reset_game():
+    player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+    asteroids = [Asteroid(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT), random.randint(30, 50)) for _ in range(5)]
+    bullets = []
+    score = 0
+    lives = 3
+    return player, asteroids, bullets, score, lives
+
 # Main game loop
 def main():
     clock = pygame.time.Clock()
     game_active = True
-    player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-    asteroids = [Asteroid(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)) for _ in range(5)]
-    bullets = []
-    score = 0
-    lives = 3
+    player, asteroids, bullets, score, lives = reset_game()
 
     while game_active:
-        # Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_active = False
@@ -39,55 +42,59 @@ def main():
                 if event.key == pygame.K_SPACE:
                     bullets.append(player.shoot())
 
-        # Update game objects
         keys = pygame.key.get_pressed()
         player.update(keys)
-        for bullet in bullets:
+        for bullet in bullets[:]:
             bullet.update()
+            if bullet.rect is None:
+                bullets.remove(bullet)
+
         for asteroid in asteroids:
             asteroid.update()
 
-        # Check for collisions between bullets and asteroids
+        new_asteroids = []
         for bullet in bullets[:]:
             for asteroid in asteroids[:]:
                 if detect_collision(bullet.rect, asteroid.rect):
                     bullets.remove(bullet)
+                    new_asteroids.extend(asteroid.break_apart())
                     asteroids.remove(asteroid)
                     score += 10
                     break
+        asteroids.extend(new_asteroids)
 
-        # Check for collisions between player and asteroids
         for asteroid in asteroids[:]:
             if detect_collision(player.rect, asteroid.rect):
                 lives -= 1
+                new_asteroids.extend(asteroid.break_apart())
                 asteroids.remove(asteroid)
                 if lives <= 0:
-                    game_active = False
+                    player, asteroids, bullets, score, lives = reset_game()
                 break
+        asteroids.extend(new_asteroids)
 
-        # Remove off-screen bullets
-        bullets = [bullet for bullet in bullets if bullet.rect.x >= 0 and bullet.rect.x <= SCREEN_WIDTH and bullet.rect.y >= 0 and bullet.rect.y <= SCREEN_HEIGHT]
+        bullets = [bullet for bullet in bullets if bullet.rect and bullet.rect.x >= 0 and bullet.rect.x <= SCREEN_WIDTH and bullet.rect.y >= 0 and bullet.rect.y <= SCREEN_HEIGHT]
 
-        # Render everything
-        screen.fill((0, 0, 0))  # Clear screen with black
+        screen.fill((0, 0, 0))
         player.draw(screen)
         for bullet in bullets:
             bullet.draw(screen)
         for asteroid in asteroids:
             asteroid.draw(screen)
         
-        # Display the current score and lives
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Score: {score}", True, (255, 255, 255))
         lives_text = font.render(f"Lives: {lives}", True, (255, 255, 255))
         screen.blit(score_text, (10, 10))
         screen.blit(lives_text, (10, 50))
 
-        pygame.display.flip()  # Update the full display
-        clock.tick(FPS)  # Maintain frame rate
+        pygame.display.flip()
+        clock.tick(FPS)
 
-    pygame.quit()  # Clean up and exit
+    pygame.quit()
 
 if __name__ == "__main__":
+    main()
+
     main()
 
